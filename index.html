@@ -2,218 +2,158 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <title>油桐花互動測驗・20題遊戲音效版</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>油桐花互動測驗</title>
   <style>
     body {
-      font-family: "Segoe UI", sans-serif;
       margin: 0;
-      background-color: #f0f2f5;
-      overflow: hidden;
-    }
-    #questionBox {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 10;
-      background-color: #2b579a;
-      color: white;
-      padding: 40px 60px;
-      border-radius: 10px;
-      box-shadow: 0 0 12px rgba(0,0,0,0.3);
-      text-align: center;
-      font-size: 36px;
+      font-family: "Noto Sans TC", sans-serif;
+      background-image: url('https://i.pinimg.com/originals/3e/e7/f4/3ee7f44f12b9ee65a8e67c7652cc2f37.jpg');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      background-repeat: no-repeat;
     }
     #gameArea {
       position: relative;
-      width: 100vw;
+      width: 100%;
       height: 100vh;
       overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
     }
-    .floatingOption {
+    #questionBox {
       position: absolute;
-      font-size: 32px;
-      background-color: white;
-      border: 2px solid #2b579a;
-      border-radius: 999px;
-      padding: 20px 36px;
+      top: 5%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.9);
+      padding: 1.2rem 2rem;
+      border-radius: 16px;
+      font-size: 1.5rem;
+      max-width: 90%;
+    }
+    .option {
+      position: absolute;
+      background: #ffffff;
+      border: 2px solid #888;
+      border-radius: 12px;
+      padding: 0.8rem 1.2rem;
+      font-size: 1.2rem;
       cursor: pointer;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-      transition: transform 0.3s;
+      transition: 0.2s ease-in-out;
+      user-select: none;
     }
-    .floatingOption:hover {
-      transform: scale(1.1);
-    }
-    #result {
+    #resultBox {
       position: absolute;
-      bottom: 20px;
-      left: 20px;
+      bottom: 5%;
+      left: 50%;
+      transform: translateX(-50%);
       font-weight: bold;
-      font-size: 28px;
-      color: #2b579a;
+      font-size: 1.4rem;
+      background: rgba(255,255,255,0.85);
+      padding: 1rem 2rem;
+      border-radius: 12px;
+      display: none;
     }
   </style>
-  <audio id="correctSound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_f4c7ccf2df.mp3" preload="auto"></audio>
-  <audio id="wrongSound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_77b0d8430a.mp3" preload="auto"></audio>
 </head>
 <body>
+  <div id="gameArea">
+    <div id="questionBox">載入中...</div>
+    <div id="resultBox"></div>
+  </div>
+  <audio id="correctSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_d9164f8918.mp3?filename=success-fanfare-trumpets-6185.mp3"></audio>
+  <audio id="wrongSound" src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_ad99706e47.mp3?filename=error-126627.mp3"></audio>
+  <script>
+    const questions = [
+      { id: 1, q: "課文中提到，油桐花的花瓣像什麼？", ans: "雪花", opts: ["雪花", "星星", "雲朵", "棉花"] },
+      { id: 2, q: "油桐花的花期主要在什麼時候？", ans: "五月", opts: ["五月", "一月", "三月", "七月"] },
+      { id: 3, q: "課文中形容油桐花飄落的樣子是？", ans: "像下雪一樣", opts: ["像下雪一樣", "像下雨一樣", "像落葉一樣", "像煙霧一樣"] },
+      { id: 4, q: "油桐花的顏色是什麼？", ans: "雪白色", opts: ["雪白色", "粉紅色", "淡黃色", "淺紫色"] },
+      { id: 5, q: "課文中提到，油桐花的花瓣數量是？", ans: "五片", opts: ["五片", "三片", "四片", "六片"] },
+      { id: 6, q: "油桐花盛開時，常被比喻為什麼？", ans: "五月雪", opts: ["五月雪", "春天的使者", "夏日的陽光", "秋天的落葉"] },
+      { id: 7, q: "課文中提到，油桐花的花朵會飄落在哪裡？", ans: "路面上", opts: ["路面上", "河流上", "草地上", "屋頂上"] },
+      { id: 8, q: "油桐花的花瓣形狀像什麼？", ans: "心形", opts: ["心形", "星形", "手掌形", "橢圓形"] },
+      { id: 9, q: "課文中提到，油桐花的花瓣掉落後會？", ans: "舖成白色地毯", opts: ["舖成白色地毯", "迅速枯萎", "留下香味", "被風吹走"] },
+      { id: 10, q: "課文中，作者對油桐花的情感是？", ans: "喜愛與讚美", opts: ["喜愛與讚美", "無感", "厭惡", "恐懼"] }
+    ];
+    let current = 0;
+    let wrongSet = new Set();
+    const qBox = document.getElementById("questionBox");
+    const resBox = document.getElementById("resultBox");
 
-<div id="questionBox">
-  題目：<span id="questionText">載入中...</span>
-</div>
-<div id="gameArea">
-  <div id="result"></div>
-</div>
-
-<script>
-
-let fullQuestions = [
-  // 課文理解（10 題）
-  { id: 1, q: "課文中提到，油桐花的花瓣像什麼？", ans: "雪花", opts: ["雪花", "星星", "雲朵", "棉花"] },
-  { id: 2, q: "油桐花的花期主要在什麼時候？", ans: "五月", opts: ["五月", "一月", "三月", "七月"] },
-  { id: 3, q: "課文中形容油桐花飄落的樣子是？", ans: "像下雪一樣", opts: ["像下雪一樣", "像下雨一樣", "像落葉一樣", "像煙霧一樣"] },
-  { id: 4, q: "油桐花的顏色是什麼？", ans: "雪白色", opts: ["雪白色", "粉紅色", "淡黃色", "淺紫色"] },
-  { id: 5, q: "課文中提到，油桐花的花瓣數量是？", ans: "五片", opts: ["五片", "三片", "四片", "六片"] },
-  { id: 6, q: "油桐花盛開時，常被比喻為什麼？", ans: "五月雪", opts: ["五月雪", "春天的使者", "夏日的陽光", "秋天的落葉"] },
-  { id: 7, q: "課文中提到，油桐花的花朵會飄落在哪裡？", ans: "路面上", opts: ["路面上", "河流上", "草地上", "屋頂上"] },
-  { id: 8, q: "油桐花的花瓣形狀像什麼？", ans: "心形", opts: ["心形", "星形", "手掌形", "橢圓形"] },
-  { id: 9, q: "課文中提到，油桐花的花瓣掉落後會？", ans: "舖成白色地毯", opts: ["舖成白色地毯", "迅速枯萎", "留下香味", "被風吹走"] },
-  { id: 10, q: "課文中，作者對油桐花的情感是？", ans: "喜愛與讚美", opts: ["喜愛與讚美", "無感", "厭惡", "恐懼"] },
-
-  // 國字注音（6 題）
-  { id: 11, q: "「桐」的正確注音是？", ans: "ㄊㄨㄥˊ", opts: ["ㄊㄨㄥˊ", "ㄊㄨㄣˊ", "ㄊㄨㄥˋ", "ㄊㄨㄣˋ"] },
-  { id: 12, q: "「瓣」的正確注音是？", ans: "ㄅㄢˋ", opts: ["ㄅㄢˋ", "ㄆㄢˋ", "ㄈㄢˋ", "ㄅㄧㄢˋ"] },
-  { id: 13, q: "哪個字的注音是「ㄅㄠˋ」？", ans: "抱", opts: ["抱", "報", "跑", "泡"] },
-  { id: 14, q: "「雪」的正確注音是？", ans: "ㄒㄩㄝˇ", opts: ["ㄒㄩㄝˇ", "ㄒㄩㄝ", "ㄒㄨㄝˇ", "ㄒㄩˋ"] },
-  { id: 15, q: "「飄」的正確注音是？", ans: "ㄆㄧㄠ", opts: ["ㄆㄧㄠ", "ㄆㄧㄠˇ", "ㄆㄠ", "ㄆㄧㄠˊ"] },
-  { id: 16, q: "「作者」的「者」注音是？", ans: "ㄓㄜˇ", opts: ["ㄓㄜˇ", "ㄓㄨㄛˇ", "ㄓㄠˇ", "ㄐㄧㄝˇ"] },
-
-  // 字音字形（4 題）
-  { id: 17, q: "下列哪一個字與「桐」的意思最不同？", ans: "桶", opts: ["桶", "楓", "樹", "林"] },
-  { id: 18, q: "「飄落」的「飄」意思是？", ans: "隨風移動", opts: ["隨風移動", "跳舞", "飛翔", "揮灑"] },
-  { id: 19, q: "「雪白」中「雪」是比喻什麼？", ans: "顏色", opts: ["顏色", "天氣", "冰塊", "季節"] },
-  { id: 20, q: "哪個詞語和「花瓣」的關係最密切？", ans: "花朵", opts: ["花朵", "葉子", "果實", "枝幹"] },
-
-  // 成語應用（2 題）
-  { id: 21, q: "課文中的「五月雪」是什麼修辭？", ans: "比喻", opts: ["比喻", "擬人", "誇張", "排比"] },
-  { id: 22, q: "下列哪一句最能描述油桐花盛開？", ans: "像下雪一樣鋪滿山頭", opts: ["像下雪一樣鋪滿山頭", "風大到飛起來", "太陽好大啊", "像在森林裡迷路"] },
-
-  // 標點符號（3 題）
-  { id: 23, q: "哪一句的標點用法正確？", ans: "油桐花，像雪一樣飄落。", opts: ["油桐花，像雪一樣飄落。", "油桐花像雪一樣飄落，", "油桐花像雪一樣飄落！。", "油桐花像雪一樣飄落？。"] },
-  { id: 24, q: "哪一句使用了問號？", ans: "你看見油桐花了嗎？", opts: ["你看見油桐花了嗎？", "油桐花盛開了。", "油桐花真漂亮！", "油桐花像雪一樣。"] },
-  { id: 25, q: "哪一句最適合用驚嘆號？", ans: "油桐花真美啊！", opts: ["油桐花真美啊！", "油桐花真美啊。", "油桐花真美啊？", "油桐花真美啊…"] }
-];
-
-
-let questionQueue = fullQuestions.slice();
-let currentQ = 0;
-let isRetrying = false;
-let retrySet = new Set();
-let retryQueue = [];
-let retryCorrectOnFirstTry = {};
-
-function shuffle(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-}
-
-function showQuestion() {
-  const q = questionQueue[currentQ];
-  q.hasBeenAnswered = false;
-
-  document.getElementById("questionText").innerText = q.q;
-  const area = document.getElementById("gameArea");
-  const result = document.getElementById("result");
-  result.innerText = "";
-
-  const oldOptions = document.querySelectorAll(".floatingOption");
-  oldOptions.forEach(o => o.remove());
-
-  shuffle(q.opts);
-  q.opts.slice(0, 4).forEach((opt, i) => {
-    const el = document.createElement("div");
-    el.className = "floatingOption";
-    el.innerText = opt;
-    el.style.left = (100 + i * 160) + "px";
-    el.style.top = (150 + i * 100) + "px";
-    el.dataset.active = "true";
-    area.appendChild(el);
-
-    let vx = (Math.random() > 0.5 ? 1 : -1) * (1 + Math.random() * 1.5);
-    let vy = (Math.random() > 0.5 ? 1 : -1) * (1 + Math.random() * 1.5);
-
-    function move() {
-      if (el.dataset.active !== "true") return;
-      let x = el.offsetLeft + vx;
-      let y = el.offsetTop + vy;
-      if (x <= 0 || x + el.offsetWidth >= window.innerWidth) vx *= -1;
-      if (y <= 0 || y + el.offsetHeight >= window.innerHeight) vy *= -1;
-      el.style.left = x + "px";
-      el.style.top = y + "px";
-      requestAnimationFrame(move);
-    }
-    move();
-
-    el.onclick = () => {
-      if (opt === q.ans) {
-        document.getElementById("correctSound").play();
-        result.innerText = "✅ 答對了！";
-        result.style.color = "#107c10";
-
-        if (isRetrying && !retryCorrectOnFirstTry[q.id]) {
-          retryCorrectOnFirstTry[q.id] = true;
+    function nextQuestion() {
+      clearOptions();
+      if (current >= questions.length) {
+        if (wrongSet.size > 0) {
+          const retry = [...wrongSet];
+          questions.length = 0;
+          retry.forEach(q => questions.push(q));
+          wrongSet.clear();
+          current = 0;
+          return nextQuestion();
         }
-
-        currentQ++;
-        setTimeout(() => {
-          if (currentQ < questionQueue.length) {
-            showQuestion();
-          } else {
-            if (!isRetrying) {
-              retryQueue = fullQuestions.filter(q => retrySet.has(q.id));
-              if (retryQueue.length > 0) {
-                isRetrying = true;
-                questionQueue = retryQueue.slice();
-                currentQ = 0;
-                retryCorrectOnFirstTry = {};
-                result.innerText = "🔁 錯題再挑戰開始...";
-                setTimeout(showQuestion, 1000);
-              } else {
-                showComplete(area);
-              }
-            } else {
-              retryQueue = retryQueue.filter(q => !retryCorrectOnFirstTry[q.id]);
-              if (retryQueue.length > 0) {
-                questionQueue = retryQueue.slice();
-                currentQ = 0;
-                retryCorrectOnFirstTry = {};
-                result.innerText = "🔁 錯題再挑戰繼續...";
-                setTimeout(showQuestion, 1000);
-              } else {
-                showComplete(area);
-              }
-            }
-          }
-        }, 1000);
-      } else {
-        document.getElementById("wrongSound").play();
-        result.innerText = "❌ 答錯了，再試一次！";
-        result.style.color = "#d13438";
-        retrySet.add(q.id);
+        qBox.innerText = "🎉 恭喜你完成所有題目！";
+        resBox.innerText = "";
+        resBox.style.display = "none";
+        return;
       }
-    };
-  });
-}
+      const q = questions[current];
+      qBox.innerText = `(${current + 1}) ${q.q}`;
+      q.opts.forEach(text => createFloatingOption(text, text === q.ans, q));
+    }
 
-function showComplete(area) {
-  area.innerHTML = "<h2 style='padding: 20px;'>🎉 測驗完成！所有題目都答對了！</h2>";
-  document.getElementById("questionBox").innerText = "結束";
-}
+    function createFloatingOption(text, isCorrect, question) {
+      const opt = document.createElement("div");
+      opt.className = "option";
+      opt.innerText = text;
+      opt.style.left = Math.random() * 80 + 5 + "%";
+      opt.style.top = Math.random() * 60 + 20 + "%";
+      document.getElementById("gameArea").appendChild(opt);
+      let dx = Math.random() * 2 + 1;
+      let dy = Math.random() * 2 + 1;
+      function move() {
+        const rect = opt.getBoundingClientRect();
+        if (rect.left <= 0 || rect.right >= window.innerWidth) dx *= -1;
+        if (rect.top <= 0 || rect.bottom >= window.innerHeight) dy *= -1;
+        opt.style.left = opt.offsetLeft + dx + "px";
+        opt.style.top = opt.offsetTop + dy + "px";
+        opt._moveTimer = requestAnimationFrame(move);
+      }
+      move();
+      opt.onclick = () => {
+        cancelAnimationFrame(opt._moveTimer);
+        if (isCorrect) {
+          resBox.innerText = "✅ 答對了！";
+          document.getElementById("correctSound").play();
+          resBox.style.display = "block";
+          setTimeout(() => {
+            resBox.style.display = "none";
+            current++;
+            nextQuestion();
+          }, 1000);
+        } else {
+          resBox.innerText = "❌ 錯了，再試一次";
+          document.getElementById("wrongSound").play();
+          resBox.style.display = "block";
+          wrongSet.add(question);
+          opt.style.backgroundColor = "#fdd";
+        }
+      };
+    }
 
-showQuestion();
-</script>
+    function clearOptions() {
+      document.querySelectorAll(".option").forEach(opt => {
+        cancelAnimationFrame(opt._moveTimer);
+        opt.remove();
+      });
+    }
+
+    nextQuestion();
+  </script>
 </body>
 </html>
